@@ -78,7 +78,7 @@ Raw_data = "Allevard 	38006 	Allevardins 	25,63 	4 062   	158 / Barraux 	38027 	
 # Also for a reason i choosed to ignore before some densities are float and some are strings. This need a fix too. 
 Data_fix_needed = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356],    #
 ['Barraux', 38027, 11.13, 1918.0, '172', 223, 80],              #
-['Bernin', 38039, 7.67, 3044.0, '397', 84, 343],                #
+['Bernin', 38039, 7.67, 3044.0, '397', 84, 343],                    #
 ['Biviers', 38045, 6.17, 2359.0, '382', 16, 392],               #
 ['Chamrousse', 38567, 13.29, 403, 30.0, 124, 506],              #
 ['Chapareillan', 38075, 30.28, 2997.0, '99',185, 33],          #
