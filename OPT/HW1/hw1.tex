@@ -13,7 +13,12 @@
 \baselineskip=15pt
 
 \begin{document}
-    
+
+\title{Optimization under uncertainty - Homework 1}
+\author{Thomas Boudier, M2 ORCO}
+
+\maketitle
+
 \section{Properties of Bellman Operators}
 
 Let $\mathcal{M} := (\mathcal{S}, A, r, P, \lambda)$ be a MDP. 
@@ -37,7 +42,8 @@ $$ L_{\pi} (V + c\mathbb{I}) = r_{\pi} + \lambda P_{\pi} V + \lambda P_{\pi} c \
 
 This being true for any fixed policy, it is also true for the best one: $$ L(V + c\mathbb{I}) = LV + \lambda c \mathbb{I} $$ 
 
-3. 
+3.  It is clear that $L$, $L_{\pi}$ are contracting and increasing. Hence, we have $V\le V_{\pi} \Rightarrow V \le L_{\pi}V$ and $V \ge V_{\pi}  \Rightarrow V \le L_{\pi}V$. \\
+This being true for any policy $\pi$, it is in particular true for the best one: $V\le V^* \Rightarrow V \le LV$ and $V \ge V^*  \Rightarrow V \le LV.$
 
 \section{Multiarmed Bandits}
 
@@ -79,6 +85,39 @@ Suppose $M < \tfrac{r_{min}}{1-\lambda}$, where $r_{min} = min_s (R)$. \\
 Imagine a scenario in which we always use the lever, and always earn the minimal reward of the machine. The total gain over an infinite horizon would be: $\sum_{t=0}^{\infty} \lambda ^t r_{min}  = \frac{r_{min}}{1-\lambda}$. Logically, if $M$ induce a lower gain than the one in the worst scenario possible, then it is never a good choice to stop to earn $M$. So we must have $W = R + \lambda P W = LW$ where $L $ is the Bellman operator. Hence $W$ is the fixed point of $L$.  \\
 
 Suppose $M > \tfrac{r_{max}}{1-\lambda}$, where $r_{max} = max_s (R)$. \\
-Similarty; the best scenario possible would give us $\frac{r_{max}}{1-\lambda}$; so it is always a better choice to stop and take $M$. Hence $W(s,M) = M$.
+Similarly; the best scenario possible would give us $\frac{r_{max}}{1-\lambda}$; so it is always a better choice to stop and take $M$. Hence $W(s,M) = M$. \\
 
+4. Consider $M= \tfrac{r_min}{1-\lambda}$. In this situation, we already know that $W(s,M) = V(s)$ for all $s \in S$, where $V$ is the fixed point of $L$; ie $V$ verifies: $$ V = R + \lambda P V \Leftrightarrow V = R ( I - \lambda P)^{-1}$$
+
+Imagine $M$ gradually increases up to the moment where we have one state $s*$ for which $W(s*,M_{s*} ) = V(s*)$. It is easy to see that $s* = argmin_s (V(s))$ where $V$ is the fixed point of $L$; hence $M_{s*} = V(s*)$. For any $M \ge M_{s*}$; we have thanks to question ???. It is clear that for any other state $s'*$; the behaviour of $W(s'*,M)$ is identical. Hence, $W(s, M)$ is linear in $M$ and: 
+$$ \forall s \in \mathcal{S}, W(s,M) = max(M, V(s))$$
+
+
+5. We call the \textit{index policy} the policy $\bar{\pi}$ in which at each step $s$ we action the lever $i$ that have the highest index $I_i(s):= min\{M | W_i(s, M) = M\}$.
+ We want to do a simulation of the problem, in particular we want to compute the value $V^{\bar{\pi}}$ of some instances using the formula:
+
+ $$\forall \pi, V^{\pi} = R_{\pi}(I - \lambda P_{\pi})^{-1}  $$
+
+Now the vector $R_{\pi}$ and the matrix $P_{\pi}$ are not trivial as in the previous questions because we are considering all the arms at the same time. To handle the things with more ease, we will introduce a bijection:
+\begin{align*}
+    c_P \colon &S \to [[0, S^n-1]]\\
+    &\ s \mapsto p.
+\end{align*}
+
+We will call $c_S$ it's inverse: $c_S := c_P^{-1}$. We call $p$ the \textit{p-state} corresponding to a state $s$ if and only if $p = c_P(s)$. Conversely $s$ is the \textit{s-state} associated to $p$.\\
+These two functions use the classical method of conversion from base 10 to base $S$. The numerical functions are called $conv_P$ and $conv_S$. \\
+
+This conversion allows us to consider the vector $R_{\bar{\pi}}$ and the matrix $P_{\bar{\pi}}$ as if they were indexed by the p-states. Now we will determine how to fill these. We will start with the matrix. \\
+First, notice it is sparse; the reason is that if you take any two s-states $s, s'$, it is unlikely that it is possible to do from one to the other: it is only possible (whatever the policy is) if they have at most one element of difference. The numerical function that handle this is a boolean one called \textit{diffp}. Note that diffp takes in argument two p-states. \\
+Suppose now we are in a p-state $p_1$ associated to the s-state $s_1$. For any p-state $p_2$ (associated to $s_2$), we want to determine the value of $(P_{\bar{\pi}})_{p1, p2}$. 
+\begin{itemize}
+    \item Call \textit{diffp} on $p1, p2$. If it returns False, returns 0.
+    \item Compute which arm has the highest index of every arm on $s_1$. Say the answer is $i$. Check that $s_1$ and $s_2$ do not differ on any other index than $i$. If this is false, return 0. Otherwise, return $P_i((s_2)_i | (s_1)_i )$. 
+\end{itemize}
+
+Now let's focus on $R_{\bar{\pi}}$. Say we are in p-state $p$. Compute it's associated s-state $s$, and the which arm $i$ has the highest index on $s$. Say the answer is $i$. Returns $r_i((s)_i)$. 
+
+You can verify in the hw.py file that the algorithm is working correctly (according to me). Some parameters may be modified, they are at the beggining of the file. The execution with $S=3$ and $n=4$ takes about a second on my computer, but I wouldn't make these too big. 
+
+To finish the homework, we simply have to execute the value iteration algorithm on the same instances and check it has the same (or "similar enough" as VI do not give an exact result) that the value computed. Of course, this is not a proof that the index policy is an optimal policy; it could just be optimal by chance on this particular instance, which is why we want to reiterate the experiment on different instance by modifying the \textit{seed} parameter for instance. 
 \end{document}
