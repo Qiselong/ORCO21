@@ -113,6 +113,10 @@ class BranchingScheme:
 
         father = None
         # TODO START
+        visited = None
+        j= None
+        length = None
+        number_of_locations = None
         # TODO END
         guide = None
         next_child_pos = 0
@@ -127,23 +131,45 @@ class BranchingScheme:
         node = self.Node()
         node.father = None
         # TODO START
+        node.visited = (1 << 0)
+        node.number_of_locations = 1
+        node.j = 0
+        node.length = 0
         # TODO END
         node.guide = 0
         return node
 
     def next_child(self, father):
         # TODO START
-        pass
+        # Find the next location to add to the partial tour.
+        j_next = father.next_child_pos
+        # Update node.next_child_pos.
+        father.next_child_pos += 1
+        # If this location has already been visited, return.
+        if (father.visited >> j_next) & 1:
+            return None
+        # If predecessors dependencies are not satisfied
+        
+                return None
+        # Build child node.
+        child = self.Node()
+        child.father = father
+        child.visited = father.visited + (1 << j_next)
+        child.number_of_locations = father.number_of_locations + 1
+        child.j = j_next
+        child.length = father.length + self.instance.distance(father.j, j_next)
+        child.guide = child.length
+        return child
         # TODO END
 
     def infertile(self, node):
         # TODO START
-        pass
+        return node.next_child_pos == len(self.instance.locations)
         # TODO END
 
     def leaf(self, node):
         # TODO START
-        pass
+        return node.number_of_locations == len(self.instance.locations) 
         # TODO END
 
     def bound(self, node_1, node_2):
