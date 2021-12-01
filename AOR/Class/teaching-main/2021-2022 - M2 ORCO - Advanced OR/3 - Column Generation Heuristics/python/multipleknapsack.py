@@ -129,6 +129,7 @@ class PricingSolver:
     def __init__(self, instance):
         self.instance = instance
         # TODO START
+        
         # TODO END
 
     def initialize_pricing(self, columns, fixed_columns):

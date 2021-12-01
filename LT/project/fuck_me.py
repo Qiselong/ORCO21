@@ -1,5 +1,6 @@
 # Date      21.11
 # Author    T. Boudier / Qiselong
+# Version   2 (25.11)
 
 # Notes
 
@@ -16,6 +17,7 @@
 #
 # At first computation we generate all the travels according to locations.txt. 
 # An intelligent mind would forbidd to generate all travels, sadly i'm a donkey.
+# Moreover I can justify the computation of all values by saying it can be interesting later with the model 
 
 # At each iteration: 
 
@@ -37,14 +39,16 @@ import requests
 
 
 #parameters
-w_time = 5.1
+max_size = 100000 #max size of file allowed
+w_time = 5
+COUNT_MAX = 5           # COUNT_MAX entries are processed before updtating the content of travels.txt.
 s = '45.1524,5.74812' #Eybens
 d = '45.273157,5.9244034' #froges
 msg = 'Note the execution must be done from ORCO21 folder.\nIf any problem to access file verify the cmd is open at the right location.\n'
 #modes:
 #   generation: uses the locations.txt to generate travels.txt (1: erase all content from travels; 2: add all combination from the content of )
 #   computation: uses travels.txt to compute
-mode = 'generation1'
+mode = 'generation1' # 'generation2' ; 'computation'
 # files adresses
 locations = 'LT/project/txt_files/locations.txt'
 travels = 'LT/project/txt_files/travels.txt'
@@ -55,16 +59,73 @@ def main():
     print(msg)
     if mode == 'generation1' or mode == 'generation2':
         generation(locations, travels, mode)
+        print("Travels file has been filled without mistake\n" + "*"*80)
+        
+    if mode == 'generation1':
+        f = open(distances, 'w')
+        f.close()
 
-    act_line=-1
-    done = False:
-    while done == False:
-        f= open(travels, 'r')
-        if act_line==-1:
-            line = f.readline()
-            if line[-1]==0:
-                #get line number, etc.TODO
+    active_line=-1
+    done = False
+    f= open(travels, 'r')
+    
+    print("Process Start: find an active line.")
 
+    content = f.readlines()
+    content = content[1: len(content)]
+    for line_number in range(len(content)):
+        line = content[line_number]
+        if  line[-2]== '0':
+            active_line = line_number
+            break
+
+    if active_line == -1:
+        print("No line to process. Script stopped.")
+    
+    print('Process continues at line ' + str(active_line) + ' of ' + str(len(content)) )
+            
+    f.close()
+
+    print("active linve found.\nFound "+str(len(content) - active_line) +" instances to compute.\nFilling the distance file... ")
+
+    f =open(distances,'a')
+
+    while active_line != len(content):
+        count = 0
+        while count < COUNT_MAX:
+            count +=1
+            line = content[active_line]
+            sd = pick(line)
+
+            distance, duration = call(sd)
+            to_append =sd + ';' + str(distance)+';'+str(duration)
+
+            print("Entry: " + to_append)
+            print(str(active_line) + '/' + str(len(content)))
+
+            time.sleep(w_time)
+
+            f.write(to_append+'\n')
+            content[active_line] = update_line(content[active_line])
+            active_line +=1
+
+        #if we reach COUNT_MAX: close distances, open travels and update it with content. 
+        print("*"*18 + "\nUpdating travels.txt\n" + "*"*18)
+        f.close()
+
+        f = open(travels, 'w')
+        for entry in content:
+            f.write(entry)
+        f.close()
+
+        f = open(distances, 'a')
+
+
+
+
+
+
+    
 # functions
 
 def generation(locations, travels, mode):
@@ -107,8 +168,16 @@ def call(sd):
 
 # STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN STEPHANE BERN
 
+def pick(line):
+    '''
+    extract s;d from a line
+    '''
+    return line[0: len(line)-3]
 
-
-
+def update_line(line):
+    '''
+    replace the 0 by a 1 in a line.
+    '''
+    return line[0: len(line)-2] + '1\n'
 
 main()
