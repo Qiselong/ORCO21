@@ -48,7 +48,7 @@ msg = 'Note the execution must be done from ORCO21 folder.\nIf any problem to ac
 #modes:
 #   generation: uses the locations.txt to generate travels.txt (1: erase all content from travels; 2: add all combination from the content of )
 #   computation: uses travels.txt to compute
-mode = 'generation1' # 'generation2' ; 'computation'
+mode = 'computation' # 'generation2' ; 'computation'
 # files adresses
 locations = 'LT/project/txt_files/locations.txt'
 travels = 'LT/project/txt_files/travels.txt'

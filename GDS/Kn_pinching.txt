@@ -1,0 +1,80 @@
+Rule used for pinching is the following: say we have two X_i, X_j \in S such that exactly one edge of them is of multiplicity 1, and one vertex in common.
+Then denote by a_i,b_i,c_i their vertices, a_i being the one with two edges of multiplicity != 1, b_i = b_j = b.
+Then it means that these two groups are covering only bc_i and bc_j. So, remove them and add X = b,c_i, c_j.
+
+
+
+
+*************** K_5 ***************
+lowerbound at 4
+
+Greedy solution gives 4
+modification: False
+can't do further pinching operation.
+
+*************** K_6 ***************
+lowerbound at 5
+
+Greedy solution gives 6
+modification: False
+can't do further pinching operation.
+
+*************** K_7 ***************
+lowerbound at 7
+
+Greedy solution gives 7
+modification: False
+can't do further pinching operation.
+
+*************** K_8 ***************
+lowerbound at 10
+
+Greedy solution gives 11
+modification: True
+size reduced to:10
+modification: False
+can't do further pinching operation.
+
+*************** K_9 ***************
+lowerbound at 12
+
+Greedy solution gives 14
+modification: False
+can't do further pinching operation.
+
+*************** K_10 ***************
+lowerbound at 15
+
+Greedy solution gives 18
+modification: False
+can't do further pinching operation.
+
+*************** K_11 ***************
+lowerbound at 19
+
+Greedy solution gives 21
+modification: False
+can't do further pinching operation.
+
+*************** K_12 ***************
+lowerbound at 22
+
+Greedy solution gives 26
+modification: False
+can't do further pinching operation.
+
+*************** K_13 ***************
+lowerbound at 26
+
+Greedy solution gives 30
+modification: False
+can't do further pinching operation.
+
+*************** K_14 ***************
+lowerbound at 31
+
+Greedy solution gives 35
+modification: True
+size reduced to:34
+modification: False
+can't do further pinching operation.
