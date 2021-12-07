@@ -12,7 +12,7 @@ import imageio
 import copy
 import math
 
-N = [25]
+N = [i for i in range(5,27)]
 duration = 0.1 #for gifs
 old_color = 'black'
 new_color = 'red'
@@ -57,7 +57,7 @@ def main():
         images = []
         for fname in filename_list:
             images.append(imageio.imread(fname))
-        imageio.mimsave(file_loc_gif + str(name)+'.mp4', images)#, duration = duration)
+        imageio.mimsave(file_loc_gif + str(name)+'.gif', images, duration = duration)
 
 
 
@@ -95,8 +95,6 @@ def custom_print(S,n, graph_name):
         if not(g.neighbors(v2).count(v3) != 0):  # litterally: if v2 do not appears among the neighbors of v1
             g.add_edge(v2, v3)
             g.es[-1]["type"] = 'new'
-
-        print(len(g.es))
         
         filename = file_loc + graph_name + '_'+ str(iS) + '.png'
         filename_list.append(filename)
