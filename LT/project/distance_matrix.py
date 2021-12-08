@@ -19,7 +19,7 @@ msg = 'Note the execution must be done from ORCO21 folder.\nIf any problem to ac
 mode = 'distance' # 'distance', 'duration'
 w_time = 5.1
 verbose = True
-selected_cities = [i for i in range(9)]
+selected_cities = [i for i in range(5)]
 
 ## Annexe
 raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934726],
@@ -48,13 +48,13 @@ raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934
 ['Le-Versoud', 38538, 6.35, 4876.0, '768', 83, 412,5.8603962,45.2151366],
 ['Les-Adrets', 38002, 16.15, 1025.0, '63', 239, 347,5.96427,45.2711],
 ['Lumbin', 38214, 6.77, 2151.0, '318', 148, 286,5.9107644,45.3060201],
-['Montbonnot-Saint-Martin', 38249, 6.38, 5306.0, '832', 39, 413,5.4812,45.1340],
+['Montbonnot-Saint-Martin', 38249, 6.38, 5306.0, '832', 39, 413,5.8,45.2333],
 ['Plateau-des-Petites-Roches', 38395, 2.0, 408, 65.0, 115, 223,5.8811206,45.3109829],
 ['Pontcharra', 38314, 15.58, 7376.0, '473', 249, 113,6.0204233,45.4327537],
-['Revel', 38334, 29.55, 1313.0, '44', 139, 502,5.5214,45.1110],
-['Saint-Ismier', 38397, 14.9, 7026.0, '472', 45, 355,5.4929,45.1458],
-['Saint-Jean-le-Vieux', 38404, 4.59, 295, 64.0, 108, 438,5.5300,45.1200],
-["Saint-Martin-d'Uriage", 38422, 29.69, 5482.0, '185', 77, 520,5.5021,45.0908],
+['Revel', 38334, 29.55, 1313.0, '44', 139, 502,5.8667,45.1833],
+['Saint-Ismier', 38397, 14.9, 7026.0, '472', 45, 355,5.8281,45.2485],
+['Saint-Jean-le-Vieux', 38404, 4.59, 295, 64.0, 108, 438,5.3833,46.033],
+["Saint-Martin-d'Uriage", 38422, 29.69, 5482.0, '185', 77, 520,5.8383,45.1522],
 ['Saint-Maximin', 38426, 10.35, 659, 64.0, 296, 298,6.0158,45.2512],
 ['Saint-Mury-Monteymond', 38430, 11.09, 319, 29.0, 167, 438,5.92682,45.2262],
 ['Saint-Nazaire-les-Eymes', 38431, 8.49, 2949.0, '347', 85, 374,5.8490243,45.2566002],
@@ -91,12 +91,13 @@ def ten_cities(L, additional_entries):
             print(entry[0], end=' / ')
     print(useful_entries + additional_entries)
     R=get_matrix("duration", verbose, useful_entries+additional_entries)
+    print(R)
     custom_save(output_times, R)
 
     f = open(output_pop, 'w')
     line = '['
     for entry in useful_entries:
-        line += ' ' + str(entry[3])
+        line += ' ' + str(entry[3])+ ','
     line += ' ]'
     f.write(line)
     f.close()
@@ -111,7 +112,7 @@ def custom_save(file,R):
         line += '['
         for i in range(len(entry)):
             line += str(entry[i])
-            line += ' '
+            line += ', '
         line +='] \n'
         f.write(line)
         line = ''
@@ -139,8 +140,6 @@ def get_matrix(dim, verb = True, data = raw_data):
     for i in range(S):
         M_i = []
         for j in range(S):
-            if i == j:
-                M_i.append(0.0)
             if verb:
                 print('seek ' + str(i) + ',' +str(j), end = ' / ')
             gps1, gps2 = get_gps(i, data), get_gps(j, data)
@@ -166,6 +165,7 @@ def seek(gps1, gps2):
         if split[0] == str(gps1) and split[1] == str(gps2) or split[1] == str(gps1) and split[0] == str(gps2):
             resa, resb = split[2], split[3]
             resb = resb[0: len(resb)-1]
+            print(resb)
             return resa, resb
         line = f.readline()
         split = line.split(";")
