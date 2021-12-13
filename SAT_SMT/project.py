@@ -7,7 +7,6 @@
 #       a file is to be read (puzzle.txt) and the solution is saved in an other file (solution.txt)
 #   2. creates a generator of sudokus having a unique solution (later...)
 
-#TODO: handle size >9 (should be not too difficult)
 
 #imports
 from z3 import *
@@ -39,7 +38,7 @@ def main():
 
     s = Solver()
     s.add(square + integrity + lines + clues)
-    s.check()
+    s.check() 
     m = s.model()
 
     print("Model successfully solved. Saving the solution.")
@@ -48,6 +47,21 @@ def main():
 
     
 #functions definition
+def str_conversion(elt):
+    """
+    converts an int into an str. 
+    """
+    A = '0123456789abcdefABCDEF'
+    print(elt, A[int(str(elt))])
+    return A[int(str(elt))]
+
+def int_conversion(elt):
+    """
+    convert a str into an int
+    """
+    A = [str(i) for i in range(10)] + ['a', 'b', 'c', 'd', 'e', 'f' , 'A', 'B', 'C', 'D', 'E', 'F']
+    return A.index(elt)
+
 def save_solution(m, fileloc, size, X):
     """
     save the solution computed in fileloc
@@ -56,7 +70,7 @@ def save_solution(m, fileloc, size, X):
     for i in range(size):
         line = ''
         for j in range(size):
-            line+= str(m[X[i][j]])
+            line+= str_conversion(m[X[i][j]])
         line = save_format(line, size)
         line += '\n'
         f.write(line)
@@ -78,11 +92,12 @@ def save_format(line, size):
 def clues_constraints(C, X):
     """
     given C (list of tuples corresponding to a clue) returns the clues constraints.
-    when n>9, it's a bit more complicated: #TODO
+    when n>9, it's a bit more complicated: see int_conversion
     """
     clues = []
     for (i,j,val) in C:
-        clues.append(X[i][j] == val)
+        value = int_conversion(val)
+        clues.append(X[i][j] == value)
     return clues
 
 
@@ -156,7 +171,7 @@ def read_puzzle(fileloc):
     for i_line in range(n):
         for i_col in range(n):
             if puzzle_content[i_line][i_col] !='X' :
-                value = int(puzzle_content[i_line][i_col])
+                value = puzzle_content[i_line][i_col]
                 Constraints.append( (i_line, i_col, value) )
 
     return n, Constraints
