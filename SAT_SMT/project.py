@@ -7,17 +7,16 @@
 #       a file is to be read (puzzle.txt) and the solution is saved in an other file (solution.txt)
 #   2. creates a generator of sudokus having a unique solution (later...)
 
+#TODO: handle size >9 (should be not too difficult)
+
 #imports
 from z3 import *
 import os
 import math
 
-
-
-
-
 #locations
-puzzle_loc = 'ORCO21/SAT_SMT/txt/puzzle.txt'
+puzzle_loc = 'SAT_SMT/txt/puzzle.txt'
+solution_loc = 'SAT_SMT/txt/solution.txt'
 
 #parameters
 warning = 'For execution & file locations: check the execution folder and the locations (puzzle_loc) variables makes sense.\n'
@@ -28,39 +27,99 @@ def main():
     print(warning)
     size, C = read_puzzle(puzzle_loc)
 
+    print("Generating model..")
 
     X = variables_solve(size)
-
     square = square_constraints(size, X)
-    print(square)
+    integrity = integrity_constraints(size, X)
+    lines = line_constraints(size, X)
+    clues = clues_constraints(C, X)
+    
+    print("Model successfully generated.\nSolving..")
 
+    s = Solver()
+    s.add(square + integrity + lines + clues)
+    s.check()
+    m = s.model()
 
+    print("Model successfully solved. Saving the solution.")
 
+    save_solution(m, solution_loc, size, X)
+
+    
 #functions definition
+def save_solution(m, fileloc, size, X):
+    """
+    save the solution computed in fileloc
+    """
+    f = open(fileloc, 'w')
+    for i in range(size):
+        line = ''
+        for j in range(size):
+            line+= str(m[X[i][j]])
+        line = save_format(line, size)
+        line += '\n'
+        f.write(line)
+    f.close()
+    print('saved successfully in ' + fileloc )
+
+def save_format(line, size):
+    """
+    given a line and a size, reform the line in "correct" format
+    """
+    np = int(math.sqrt(size))
+    l = ''
+    for i in range(size):
+        l+=line[i]
+        if (i+1)%np == 0:
+            l+=' '
+    return l
+
+def clues_constraints(C, X):
+    """
+    given C (list of tuples corresponding to a clue) returns the clues constraints.
+    when n>9, it's a bit more complicated: #TODO
+    """
+    clues = []
+    for (i,j,val) in C:
+        clues.append(X[i][j] == val)
+    return clues
+
 
 def line_constraints(size, X):
     """
-    returns line constraints for a puzzle with given number of elements
+    returns line&colls constraints for a puzzle with given number of elements
     """
-    lines = [ [ [ If (i1 != i2, X[i1][j] != X[i2][j], True) for i1 in range(size)] for i2 in range(size) ]for j in range(size)] 
+    lines = []
+    for i in range(size):
+        for j1 in range(size):
+            for j2 in range(size):
+                if j1 != j2:
+                    lines.append(X[i][j1] != X[i][j2])
+                    lines.append(X[j1][i] != X[j2][i])
     return lines
 
-def coll_constraints(size, X):
-    """
-    returns collumns constraints for a puzzle with given number of elements
-    """
-    colls = [ [ [ If (i1 != i2, X[j][i1] != X[j][i1], True) for i1 in range(size)] for i2 in range(size) ]for j in range(size)]  
-    return colls
 
 def square_constraints(size, X):
     """
     returns unicity constraints for a puzzle with given number of elements.
     """
     np = int(math.sqrt(size))
-    square =[ [ [ [ If(j1//np == j2//np and i1//np == i2//np, X[i1][j1] != X[i2][j2], True ) for j2 in range(size)] for j1 in range(size)] for i2 in range(size)] for i1 in range(size)]
+    square = []
+    for i1 in range(size):
+        for i2 in range(size):
+            for j1 in range(size):
+                for j2 in range(size):
+                    if j1//np == j2//np and i1//np == i2//np and (i1,j1) != (i2,j2):
+                        square.append(X[i1][j1] != X[i2][j2])
     return square
     
-   
+def integrity_constraints(size, X):
+    """
+    return integrity constraints.
+    """   
+    integrity = [  And(X[i][j] >= 1, X[i][j] <= size ) for j in range(size) for i in range(size)]
+    return integrity
 
 
 def variables_solve(size):
@@ -79,6 +138,8 @@ def read_puzzle(fileloc):
 
     f = open(fileloc, 'r')
     file_content = f.readlines()   
+    f.close()
+
     n = int(file_content[0])
     puzzle_content = file_content[1:len(file_content)]
 
@@ -108,7 +169,5 @@ def clearConsole(): #collectivized code from https://www.delftstack.com/howto/py
     os.system(command)
 
         
-
-
 # main
 main()
