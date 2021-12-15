@@ -6,6 +6,11 @@ import igraph
 from igraph import Plot
 from igraph import layout
 from matplotlib import use
+import time
+import requests
+import math
+import imageio
+
 p1 = Plot()
 # Operation:    
 #   1. Gather gps coordinates of useful cities.
@@ -16,7 +21,30 @@ p1 = Plot()
 
 ## Annexe
 additional_entries = [['Depot', '00000', 0, 0, 0, 0, 0, 0, 5.87114, 45.2313]]
+distances = 'LT/project/txt_files/distances.txt'
+w_time = 5.1
+duration = 1
 
+# Solution found for MILP. Each y_i correspond to a tour; ordered. each x_i correspond to a fraction of the tour realized. 
+y_1 = [9, 11, 1, 5]
+y_2 = [4]
+y_3 = [7]
+y_4 = [2, 7]
+y_5 = [8, 10, 6]
+y_6 = [3]
+y_7 = [0, 9]
+Y = [y_1, y_2, y_3, y_4, y_5, y_6, y_7]
+
+x_1 = [0.23, 1, 1, 1]
+x_2 = [1]
+x_3 = [0.5]
+x_4 = [1, 0.5]
+x_5 = [1, 1, 1]
+x_6 = [1]
+x_7 = [1, 0.77]
+X = [x_1, x_2, x_3, x_4, x_5, x_6, x_7]
+
+ 
 raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934726],
 ['Barraux', 38027, 11.13, 1918.0, '172', 223, 80,5.9773523,45.4337691],
 ['Bernin', 38039, 7.67, 3044.0, '397', 84, 343,5.8664744,45.2693836],
@@ -62,7 +90,7 @@ raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934
 
 #
 
-selected_cities = [i for i in range(len(raw_data))]
+selected_cities = [i for i in range(12)]
 city_col = 'black'
 active_col = 'red'
 depot_col = 'blue'
@@ -111,31 +139,193 @@ def main():
         
         g.vs[vi]['label'] = useful_entries[vi][0]
 
-    #population:
-    Pop = []
-    for entry in useful_entries:
-        pop = entry[3]
-        if pop < 700:
-            Pop.append(3)
-        elif pop < 2000:
-            Pop.append(5)
-        elif pop < 4000:
-            Pop.append(7)
-        elif pop > 8200:
-            Pop.append (15)
-        else: 
-            Pop.append(10)
-            
-    Pop[-1] = 7
+    
 
     vs_dict = {'city' : city_col, 'active' : active_col, 'depot': depot_col }
     es_dict = {'inactive' : inactive_edge_col, 'active': active_edge_col}
     
     #n: plot 
 
-    name = images_loc + 'test.png'
-    igraph.plot(g, name, layout = layout1, vertex_color = [vs_dict[v_type]  for v_type in g.vs['type']], vertex_size = [1.7*pop_i for pop_i in Pop  ] )
+    #name = images_loc + 'test.png'
+    #igraph.plot(g, name, layout = layout1, vertex_color = [vs_dict[v_type]  for v_type in g.vs['type']], vertex_size = [1.7*pop_i for pop_i in Pop  ] )
+    partial_solution(X, Y, useful_entries, g,layout1)
+
+
+def get_matrix(dim, verb = True, data = raw_data):
+    k = 0
+    if dim == 'distance':
+        k=1
+    elif dim == 'duration':
+        k=2
+    else:
+        print('dim parameter invalid. duration or distance are the only possibilities.')
+        return None
+    #f = open(database)
+    #content_database = f.readlines()
     
+    #S = len(content_database)
+    S = len(data)
+    M = []
+    for i in range(S):
+        M_i = []
+        for j in range(S):
+            if verb:
+                print('seek ' + str(i) + ',' +str(j), end = ' / ')
+            gps1, gps2 = get_gps(i, data), get_gps(j, data)
+            dist, dura = seek(gps1, gps2)
+            if k ==1:
+                M_i.append(dist)
+            else: 
+                M_i.append(dura)
+        M.append(M_i)
+        if verb:
+            print("line " + str(i) + "out of " + str(S) + "computed.")
+
+    return M
+
+def seek(gps1, gps2):
+    """
+    look in the distance file for a line corresponding to a travel from gps1 to gps2. If we can't find one, add it and wait for 5 seconds. 
+    """
+    f = open(distances, 'r')
+    line = f.readline()
+    split = line.split(";")
+
+    while len(split) >= 4 :
+        if split[0] == str(gps1) and split[1] == str(gps2) or split[1] == str(gps1) and split[0] == str(gps2):
+            resa, resb = split[2], split[3]
+            resb = resb[0: len(resb)-1]
+
+            return resa, resb
+        line = f.readline()
+        split = line.split(";")
+
+    f.close()
+    
+    # if we arrive here it means the travel from gps1 to gps2 has not been computed for some reason.
+    print("\nTravel from " + gps1 + ' to '+ gps2 + 'has not been ever computed. We compute it now.')
+    sd = gps1 + ';' + gps2
+    dist, dura = call(sd)
+
+    f = open(distances, 'a')
+    f.write(gps1 + ";" + gps2 + ';'+dist+';'+dura+'\n' )
+    f.close()
+
+    print("distance.txt file succesfully appened. The script goes to sleep for " + str(w_time)+ 'secs.')
+    time.sleep(w_time)
+    return dist, dura
+
+
+
+def call(sd):   #infamously copy pasted from fuck_me.py.
+    """
+    use osrm to get the distance between s and d. Note sd must be a string obtained by doing: s+';'+d
+    """
+    url = "http://router.project-osrm.org/route/v1/driving/"+ sd + "?alternatives=true"
+    r = requests.get(url)
+    res = r.json()
+    return str(res["routes"][0]["distance"]), str(res["routes"][0]["duration"])
+
+
+def get_gps(i, data=raw_data):
+    """ 
+    uses the raw_data table to get the gps values of the city i as a string.
+    """
+    return str(data[i][-2]) + ',' + str(data[i][-1])
+
+## Partial sol
+
+def partial_solution(X, Y, useful_entries,g, layout):
+    """
+    returns the value of the solution (time) and plots it as a gif.
+    """
+    optimal_value(X, Y, useful_entries)
+    solution_animation(X, Y, useful_entries,g, layout)
+
+def solution_animation(X, Y, useful_entries,g, layout1):
+    """
+    animates as a gif the solution given.
+    g is a igraph.Graph, layout is the associated layout.
+    """
+
+    #for each tour, print two images: before and after the tour.
+    # each city start with a size of 20 and get gradually reduced as the tour goes up.
+    for v in g.vs:
+        v["size"] = 30
+
+
+    for i in range(len(Y)):
+        name = images_loc +'tour_'+str(i+1)
+        tour = [12] + Y[i] + [12]
+        gp = g
+        
+
+        igraph.plot(gp, name +'_1.png', layout = layout1, vertex_size = [ v["size"] for v in gp.vs  ] )
+
+        for j in range(len(tour)-1):
+            gp.add_edge(tour[j], tour[j+1])
+
+        
+        igraph.plot(gp, name+'_2.png', layout=layout1, vertex_size = [ v["size"] for v in gp.vs  ])
+
+        for j in range(len(Y[i])):
+            v_j = Y[i][j]
+            f_j = X[i][j]
+            g.vs[v_j]["size"] = gp.vs[v_j]["size"] - 30* (f_j)
+
+        nE = len(g.es)
+
+        for e_i in range(nE):
+            g.delete_edges(0)
+
+        ## Gif ploting
+
+    filename_list = []
+    for i in range(1, 8):
+        name = images_loc + 'tour_' + str(i) 
+        filename_list.append(name+ '_1.png')
+        filename_list.append(name+ '_2.png')
+
+    images = []
+    for fname in filename_list:
+        images.append(imageio.imread(fname))
+    imageio.mimsave(gif_loc + 'gif_sol_12.gif', images, duration=duration)
+    
+
+
+
+
+def optimal_value(X, Y, useful_entries):
+    """
+    computes the optimal (time) value of the solution obtained.
+    """
+    Mt = get_matrix('duration',verb = False, data = useful_entries)
+
+    total_time = 0 
+
+    for k in range(len(Y)):
+        tour_time = 0
+        tour = [12] + Y[k] + [12]
+        for i in range(len(tour)-1):
+            tour_time += float(Mt[tour[i]][tour[i+1]])
+        total_time += tour_time
+    print("total traveling time is " + str(total_time))
+
+
+    total_pop = 0
+    for entry in useful_entries:
+        total_pop += entry[3]
+
+    gather_time = 3600*7*total_pop/2000 
+    print("total population of the sector is " + str(total_pop) +'\nleading to a total gathering time of ' + str(gather_time) )
+    
+
+    return total_time + gather_time
+        
+
+
+
+
 ###
 
 # What does a solution looks like? 
