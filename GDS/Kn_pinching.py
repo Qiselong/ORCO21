@@ -12,8 +12,8 @@ import imageio
 import copy
 import math
 
-N = [i for i in range(5,27)]
-duration = 0.1 #for gifs
+N = [14]
+duration = 0.3 #for gifs
 old_color = 'black'
 new_color = 'red'
 msg = 'execution is to be made from ORCO21 folder. Try changing cmd location or file_loc parameter if you have any problem.\n'

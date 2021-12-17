@@ -8,21 +8,24 @@
 import igraph           # if the import of igraph does not work: put this line in comment and turn igraph_use to False.
 import math
 import random
+import imageio
 
 from igraph import layout
 
 # Parameters:
-n = 40          # size of G
-d = 0.3   # density of G
+n = 15       # size of G
+d = 0.5  # density of G
 nTry = 1000             # max number of try at generating a graph without 
 igraph_use = True
-word_warp = True        # if the G_tilde has too much lines turn this to False
+word_warp = False       # if the G_tilde has too much lines turn this to False
+duration = 0.5
 
 # file section
 data_loc = 'GDS/txt/G_tilde.txt'
 sol_loc = 'GDS/txt/G_tilde_solution.txt'
 G_tilde_plot_loc = 'GDS/G_tilde/G_tilde.png'
 G_tilde_sol_loc = 'GDS/G_tilde/G_tilde_solution.png'
+G_loc = 'GDS/G_tilde/G.png'
 
 
 # main definition
@@ -42,6 +45,8 @@ def main():
         print("number of tries allowed exceeded; try raising the density parameter.")
         return None
 
+    layout1 = print_G(Edges_list, G_loc, n)
+
 
     nE = len(Edges_list)
     T_set = triangle_count(G)
@@ -59,7 +64,12 @@ def main():
 
     Sol_Gtilde = read_sol(sol_loc)
 
-    gtilde_print_sol(Sol_Gtilde, g_tilde, layout_g_tilde, G_tilde_sol_loc, len(Edges_list))
+    gtilde_print_sol(Sol_Gtilde, g_tilde, layout_g_tilde, G_tilde_sol_loc, len(Edges_list), G_t)
+
+    S = group_extraction(T_set, Sol_Gtilde)
+    print(S)
+
+    animation_optimal_solution(S, layout1)
 
 
 
@@ -73,6 +83,54 @@ def main():
 
 
 # Functions
+def animation_optimal_solution(S, layout1):
+    """
+    uses the layout1 and g1 (for vnames) to create a gif out of the solution S.
+    """
+
+    g = igraph.Graph(n)
+    name = 'GDS/images/solution_'
+    col_dict = {'old' : 'black', 'new' : 'red'}
+    thick_dict = {'old' : 2, 'new' : 3}
+
+    for i in range(len(S)):
+        name_i = name + str(i) + '.png'
+        u,v,w = S[i][0], S[i][1], S[i][2]
+
+        if g.neighbors(u).count(v) == 0:
+            g.add_edge(u,v)
+            g.es[-1]['type'] = 'new'
+        if g.neighbors(u).count(w) == 0: 
+            g.add_edge(u,w)
+            g.es[-1]['type'] = 'new'
+        if g.neighbors(v).count(w) == 0:
+            g.add_edge(v,w)
+            g.es[-1]['type'] = 'new'
+
+        igraph.plot(g, name_i, layout = layout1, edge_color = [col_dict[e['type']] for e in g.es], edge_width = [thick_dict[e['type']] for e in g.es], vertex_color = ['black' for v in g.vs] )
+
+        for e in g.es:
+            e['type'] = 'old'
+
+    filename_list = [name + str(i) +'.png' for i in range(len(S)-1)] + [name + str(len(S)-1) +'.png']*10
+    images = []
+    for fname in filename_list:
+        images.append(imageio.imread(fname))
+    imageio.mimsave('GDS/gif/aa_final_solution.gif', images, duration = duration)
+
+
+
+def group_extraction(T_set, Gt_sol):
+    """
+    from the triangle set T_set and Gt_sol, returns the list of the groups of an optimal solution.
+    """
+
+    S = []
+    for i in range(len(Gt_sol)):
+        if Gt_sol[i] == 1:
+            S.append(T_set[i])
+    return S
+
 def generation(n, d):
     """
     generates as a list of edges (tuples) a random graph of size n with density d. 
@@ -227,22 +285,42 @@ def read_sol(file_loc):
     ## A solution is of the form [0 1 0 ... 0 0 1]
     ## 0 means a triangle is not in the solution, 1 means it is
     f = open(file_loc)
-    entry = f.readlin()
+    entry = f.readline()
     entry = entry[1:len(entry)-1]
     Sol = [int(elt) for elt in entry.split(' ')]
     return Sol
     
-def gtilde_print_sol(S, Gt, layoutGt, fileloc, nE):
+def gtilde_print_sol(S, Gt, layoutGt, fileloc, nE, M):
     """
     Using S, print an optimal solution for the problem defined by Gtilde.
     """
+    for edge_count in range(len(Gt.es)):
+        Gt.delete_edges(0)
+
     for i in range(len(S)):
-        i_real = nE + i
-        if S[i] == 0:
-            Gt = igraph.delete_vertices(Gt, i_real)
+        i_real = i + nE
+        if S[i] == 1:
+            for j in range(len(M)):
+                if M[i_real][j]:
+                    Gt.add_edge(i_real, j)
+                    
+
     igraph.plot(Gt, fileloc,layout = layoutGt, vertex_label = [v['name'] for v in Gt.vs]) 
 
+def print_G(Edges, fileloc, n):
+    '''
+    save G that is defined by edges at fileloc and return it's layout.
+    '''
 
+    g = igraph.Graph(n)
+    for (i,j) in Edges:
+        g.add_edge(i,j)
+
+    layout1 = g.layout_circle()
+
+    igraph.plot(g, fileloc, layout = layout1)
+    print("G saved succesfully.")
+    return layout1
 
 
 
