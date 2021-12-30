@@ -20,10 +20,10 @@ p1 = Plot()
 #   3. Gather population values from rawdata
 
 ## Annexe
-additional_entries = [['Depot', '00000', 0, 0, 0, 0, 0, 0, 5.87114, 45.2313]]
+additional_entries = [['Depot', 'Depot', 0, 0, 0, 0, 0, 0, 5.87114, 45.2313]]
 distances = 'LT/project/txt_files/distances.txt'
 w_time = 5.1
-duration = 1
+duration = 2
 
 # Solution found for MILP. Each y_i correspond to a tour; ordered. each x_i correspond to a fraction of the tour realized. 
 y_1 = [9, 11, 1, 5]
@@ -44,6 +44,9 @@ x_6 = [1]
 x_7 = [1, 0.77]
 X = [x_1, x_2, x_3, x_4, x_5, x_6, x_7]
 
+#Solution of Anas (Clustering)
+Yp = [[20, 0, 21, 12, 28, 5], [22, 36, 38, 11, 39, 14, 1, 28, 19], [25, 16, 40, 10, 24, 6, 33, 41, 9, 22], [3, 26, 30], [25, 7, 2], [23, 30, 35, 2, 27, 15, 18, 8, 17], [23, 29, 32, 4, 31, 13, 34, 37]]
+Xp = [[1.0, 1.0, 1.0, 1.0, 0.6556399132321041, 1.0], [0.7230721198876053, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.34436008676789587, 1.0], [0.2794049279404928, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2769278801123946], [1.0, 1.0, 0.7220324508966696], [0.7205950720595072, 1.0, 0.961892247043364], [0.24876948318293685, 0.2779675491033305, 1.0, 0.03810775295663601, 1.0, 1.0, 1.0, 1.0, 1.0], [0.7512305168170632, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]
  
 raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934726],
 ['Barraux', 38027, 11.13, 1918.0, '172', 223, 80,5.9773523,45.4337691],
@@ -90,7 +93,7 @@ raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934
 
 #
 
-selected_cities = [i for i in range(12)]
+selected_cities = [i for i in range(len(raw_data))]
 city_col = 'black'
 active_col = 'red'
 depot_col = 'blue'
@@ -100,6 +103,7 @@ inactive_edge_col = 'black'
 
 images_loc = 'LT/project/images/'
 gif_loc = 'LT/project/gif/'
+name_type = 'code'  #'name'
 
 def main():
     # 1
@@ -109,6 +113,11 @@ def main():
 
     for entry  in additional_entries:
         useful_entries.append(entry)
+
+    if name_type == 'code':
+        for entry in useful_entries:
+            entry[0], entry[1] = entry[1], entry[0]
+            entry[0] = str( entry[0])
 
 
     #2
@@ -125,8 +134,12 @@ def main():
         COOX.append(100*(GPSX[i]-xmin)/(xmax-xmin))
         COOY.append(100*(GPSY[i]-ymin)/(ymax-ymin))
 
-    g = igraph.Graph(len(selected_cities)+1)
+    g = igraph.Graph(len(useful_entries))
+
     layout1 = g.layout('rt', 2)
+
+    print(useful_entries)
+    print(COOX)
 
     for i in range(len(layout1)):
         layout1[i] = (-COOX[i], -COOY[i])
@@ -148,7 +161,7 @@ def main():
 
     #name = images_loc + 'test.png'
     #igraph.plot(g, name, layout = layout1, vertex_color = [vs_dict[v_type]  for v_type in g.vs['type']], vertex_size = [1.7*pop_i for pop_i in Pop  ] )
-    partial_solution(X, Y, useful_entries, g,layout1)
+    partial_solution(Xp, Yp, useful_entries, g,layout1)
 
 
 def get_matrix(dim, verb = True, data = raw_data):
@@ -253,20 +266,26 @@ def solution_animation(X, Y, useful_entries,g, layout1):
     for v in g.vs:
         v["size"] = 30
 
+    g.vs[-1]["size"] = 15
+
+
+    #print(len(useful_entries))
+    #print(useful_entries)
 
     for i in range(len(Y)):
         name = images_loc +'tour_'+str(i+1)
-        tour = [12] + Y[i] + [12]
+        tour = [42] + Y[i] + [42]
         gp = g
         
 
-        igraph.plot(gp, name +'_1.png', layout = layout1, vertex_size = [ v["size"] for v in gp.vs  ] )
+        igraph.plot(gp, name +'_1.png', layout = layout1, vertex_size = [ v["size"] for v in gp.vs  ] , vertex_color = ['red' for v in range(len(useful_entries)-1)] + ['blue'] )
 
         for j in range(len(tour)-1):
-            gp.add_edge(tour[j], tour[j+1])
+            #print("add edge:", str(tour[j]), str(tour[j+1]))
+            gp.add_edge(    int(tour[j])  , int(tour[j+1] ) )
 
         
-        igraph.plot(gp, name+'_2.png', layout=layout1, vertex_size = [ v["size"] for v in gp.vs  ])
+        igraph.plot(gp, name+'_2.png', layout=layout1, vertex_size = [ v["size"] for v in gp.vs  ], vertex_color = ['red' for v in range(len(useful_entries)-1)] + ['blue'] )
 
         for j in range(len(Y[i])):
             v_j = Y[i][j]
@@ -289,6 +308,8 @@ def solution_animation(X, Y, useful_entries,g, layout1):
     images = []
     for fname in filename_list:
         images.append(imageio.imread(fname))
+    for i in range(5):
+        images.append(imageio.imread(filename_list[-1]))
     imageio.mimsave(gif_loc + 'gif_sol_12.gif', images, duration=duration)
     
 
@@ -307,7 +328,8 @@ def optimal_value(X, Y, useful_entries):
         tour_time = 0
         tour = [12] + Y[k] + [12]
         for i in range(len(tour)-1):
-            tour_time += float(Mt[tour[i]][tour[i+1]])
+            
+            tour_time += float( Mt[ int(tour[i])][int(tour[i+1]) ] )
         total_time += tour_time
     print("total traveling time is " + str(total_time))
 
