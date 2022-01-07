@@ -48,6 +48,10 @@ X = [x_1, x_2, x_3, x_4, x_5, x_6, x_7]
 Yp = [[20, 0, 21, 12, 28, 5], [22, 36, 38, 11, 39, 14, 1, 28, 19], [25, 16, 40, 10, 24, 6, 33, 41, 9, 22], [3, 26, 30], [25, 7, 2], [23, 30, 35, 2, 27, 15, 18, 8, 17], [23, 29, 32, 4, 31, 13, 34, 37]]
 Xp = [[1.0, 1.0, 1.0, 1.0, 0.6556399132321041, 1.0], [0.7230721198876053, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.34436008676789587, 1.0], [0.2794049279404928, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2769278801123946], [1.0, 1.0, 0.7220324508966696], [0.7205950720595072, 1.0, 0.961892247043364], [0.24876948318293685, 0.2779675491033305, 1.0, 0.03810775295663601, 1.0, 1.0, 1.0, 1.0, 1.0], [0.7512305168170632, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]
  
+#anas sol (12)
+Y3 = [[9, 0], [1, 5], [1, 11, 9, 10, 6, 8], [4, 3, 2], [7], [2, 7], [2, 8], [2]]
+X3 = [[0.09352226720647773, 1.0], [0.67570385818561, 1.0], [0.32429614181439, 1.0, 0.9064777327935223, 1.0, 1.0, 0.0749776852127343], [1.0, 1.0, 0.5029566360052562], [0.5197336561743341], [0.10709592641261498, 0.48026634382566585], [0.38896189224704336, 0.9250223147872657], [0.0009855453350854138]]
+
 raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934726],
 ['Barraux', 38027, 11.13, 1918.0, '172', 223, 80,5.9773523,45.4337691],
 ['Bernin', 38039, 7.67, 3044.0, '397', 84, 343,5.8664744,45.2693836],
@@ -92,8 +96,38 @@ raw_data = [['Allevard', 38006, 25.63, 4062.0, '158', 326, 356,6.0744406,45.3934
 ['Theys', 38504, 35.77, 1980.0, '55', 254, 299,5.9957494,45.3015475] ]
 
 #
+SOL = 2
+sol2_num = len(raw_data)
+sol2_index = 42
+sol1_num = 12
+sol1_index = 12
+sol1_msg = 'MILP - 12 cities'
+sol2_msg = 'Heuristic - 42 cities'
+sol3_msg = 'Heuristic - 12 cities'
 
-selected_cities = [i for i in range(len(raw_data))]
+name_type = 'code'
+
+if SOL == 2:
+    sol_num = sol2_num
+    sol_index = sol2_index
+    X_SOL, Y_SOL = Xp, Yp
+    gifname = 'sol_2'
+    sol_msg = sol2_msg
+elif SOL == 3:
+    sol_num = sol1_num
+    sol_index = sol1_index 
+    X_SOL, Y_SOL = X3, Y3
+    gifname = 'sol_3'
+    sol_msg = sol3_msg
+else:
+    sol_num = sol1_num
+    sol_index = sol1_index 
+    X_SOL, Y_SOL = X, Y
+    gifname = 'sol_1'
+    sol_msg = sol1_msg
+
+
+selected_cities = [i for i in range(sol_num)] #len(raw_data))]
 city_col = 'black'
 active_col = 'red'
 depot_col = 'blue'
@@ -103,9 +137,11 @@ inactive_edge_col = 'black'
 
 images_loc = 'LT/project/images/'
 gif_loc = 'LT/project/gif/'
-name_type = 'code'  #'name'
+
 
 def main():
+    print(sol_msg)
+
     # 1
     useful_entries =[]
     for i in selected_cities:
@@ -120,11 +156,14 @@ def main():
             entry[0] = str( entry[0])
 
 
+
     #2
     GPSX, GPSY = [], []
+    VCOL = []
     for entry in useful_entries:
         GPSX.append(entry[-2])
         GPSY.append(entry[-1])
+        VCOL.append(v_color(entry[3], 9000, 150))
 
     xmax, xmin, ymin, ymax = min(GPSX), max(GPSX), min(GPSY), max(GPSY)
 
@@ -138,8 +177,8 @@ def main():
 
     layout1 = g.layout('rt', 2)
 
-    print(useful_entries)
-    print(COOX)
+    #print(useful_entries)
+    #print(COOX)
 
     for i in range(len(layout1)):
         layout1[i] = (-COOX[i], -COOY[i])
@@ -161,8 +200,46 @@ def main():
 
     #name = images_loc + 'test.png'
     #igraph.plot(g, name, layout = layout1, vertex_color = [vs_dict[v_type]  for v_type in g.vs['type']], vertex_size = [1.7*pop_i for pop_i in Pop  ] )
-    partial_solution(Xp, Yp, useful_entries, g,layout1)
+    partial_solution(X_SOL, Y_SOL, useful_entries, g,layout1, VCOL)
 
+## functions
+def v_color(val, max, min):
+    '''
+    return the color to give to a vertex. 
+    '''
+
+#double resultRed = color1.red + percent * (color2.red - color1.red);
+#double resultGreen = color1.green + percent * (color2.green - color1.green);
+#double resultBlue = color1.blue + percent * (color2.blue - color1.blue);
+    p = (max - val ) / (max-min)
+    if p > 1:
+        p=1
+    if p<0:
+        p=0
+
+    col1 = [ 255, 0, 0]
+    col2 = [ 255, 255, 0]
+
+    vr = col1[0] + p*(col2[0] - col1[0])
+    vg = col1[1] + p*(col2[1] - col1[1])
+    vb = col1[2] + p*(col2[2] - col1[2])
+
+    #print(p, (vr, vg, vb))
+    #print(vr)
+    #print(hex(int(vr)).split('x')[1])
+    hr =hex(int(vr)).split('x')[1]
+    if len(hr) == 1:
+        hr = '0'+hr
+    hb =hex(int(vb)).split('x')[1]
+    if len(hb) == 1:
+        hb = '0'+hb
+    hg =hex(int(vg)).split('x')[1]
+    if len(hg) == 1:
+        hg = '0'+hg
+    
+    tmp = '#' + hr + hg + hb
+    print(tmp)
+    return tmp 
 
 def get_matrix(dim, verb = True, data = raw_data):
     k = 0
@@ -248,14 +325,14 @@ def get_gps(i, data=raw_data):
 
 ## Partial sol
 
-def partial_solution(X, Y, useful_entries,g, layout):
+def partial_solution(X, Y, useful_entries,g, layout, VCOL):
     """
     returns the value of the solution (time) and plots it as a gif.
     """
     optimal_value(X, Y, useful_entries)
-    solution_animation(X, Y, useful_entries,g, layout)
+    solution_animation(X, Y, useful_entries,g, layout, VCOL)
 
-def solution_animation(X, Y, useful_entries,g, layout1):
+def solution_animation(X, Y, useful_entries,g, layout1, VCOL):
     """
     animates as a gif the solution given.
     g is a igraph.Graph, layout is the associated layout.
@@ -268,24 +345,26 @@ def solution_animation(X, Y, useful_entries,g, layout1):
 
     g.vs[-1]["size"] = 15
 
+    VCOL[-1] = 'green'
+
 
     #print(len(useful_entries))
     #print(useful_entries)
 
     for i in range(len(Y)):
         name = images_loc +'tour_'+str(i+1)
-        tour = [42] + Y[i] + [42]
+        tour = [sol_index] + Y[i] + [sol_index]
         gp = g
         
 
-        igraph.plot(gp, name +'_1.png', layout = layout1, vertex_size = [ v["size"] for v in gp.vs  ] , vertex_color = ['red' for v in range(len(useful_entries)-1)] + ['blue'] )
+        igraph.plot(gp, name +'_1.png', layout = layout1, vertex_size = [ v["size"] for v in gp.vs  ] , vertex_color = VCOL  )#['red' for v in range(len(useful_entries)-1)] + ['blue'] )
 
         for j in range(len(tour)-1):
             #print("add edge:", str(tour[j]), str(tour[j+1]))
             gp.add_edge(    int(tour[j])  , int(tour[j+1] ) )
 
         
-        igraph.plot(gp, name+'_2.png', layout=layout1, vertex_size = [ v["size"] for v in gp.vs  ], vertex_color = ['red' for v in range(len(useful_entries)-1)] + ['blue'] )
+        igraph.plot(gp, name+'_2.png', layout=layout1, vertex_size = [ v["size"] for v in gp.vs  ], vertex_color = VCOL )#['red' for v in range(len(useful_entries)-1)] + ['blue'] )
 
         for j in range(len(Y[i])):
             v_j = Y[i][j]
@@ -310,7 +389,7 @@ def solution_animation(X, Y, useful_entries,g, layout1):
         images.append(imageio.imread(fname))
     for i in range(5):
         images.append(imageio.imread(filename_list[-1]))
-    imageio.mimsave(gif_loc + 'gif_sol_12.gif', images, duration=duration)
+    imageio.mimsave(gif_loc + gifname +'.gif', images, duration=duration)
     
 
 
