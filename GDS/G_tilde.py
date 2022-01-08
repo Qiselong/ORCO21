@@ -13,7 +13,7 @@ import imageio
 from igraph import layout
 
 # Parameters:
-n = 15       # size of G
+n = 18       # size of G
 d = 0.5  # density of G
 nTry = 1000             # max number of try at generating a graph without 
 igraph_use = True
