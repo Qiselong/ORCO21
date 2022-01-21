@@ -1,5 +1,6 @@
 ## Date 13.12
 ## Author Thomas B
+## Last update 21.01
 
 # Objective: 
 #   1. create a solver for sudoku using Z3 solver
@@ -12,10 +13,11 @@
 from z3 import *
 import os
 import math
+import time
 
 #locations
-puzzle_loc = 'SAT_SMT/txt/puzzle.txt'
-solution_loc = 'SAT_SMT/txt/solution.txt'
+puzzle_loc = 'SAT_SMT/txt/puzzle_v2.txt'
+solution_loc = 'SAT_SMT/txt/solution_v2.txt'
 
 #parameters
 warning = 'For execution & file locations: check the execution folder and the locations (puzzle_loc) variables makes sense.\n'
@@ -26,6 +28,7 @@ def main():
     print(warning)
     size, C = read_puzzle(puzzle_loc)
 
+    ts = time.perf_counter_ns()
     print("Generating model..")
 
     X = variables_solve(size)
@@ -34,15 +37,17 @@ def main():
     lines = line_constraints(size, X)
     clues = clues_constraints(C, X)
     
-    print("Model successfully generated.\nSolving..")
+    print("Model successfully generated.)")
+
 
     s = Solver()
     s.add(square + integrity + lines + clues)
     s.check() 
     m = s.model()
 
+    te = time.perf_counter_ns()
     print("Model successfully solved. Saving the solution.")
-
+    print("Elapsed time: {0} µs".format((te-ts)//1000))
     save_solution(m, solution_loc, size, X)
 
     
@@ -52,7 +57,7 @@ def str_conversion(elt):
     converts an int into an str. 
     """
     A = '0123456789abcdefABCDEF'
-    print(elt, A[int(str(elt))])
+    #print(elt, A[int(str(elt))])
     return A[int(str(elt))]
 
 def int_conversion(elt):
@@ -183,6 +188,6 @@ def clearConsole(): #collectivized code from https://www.delftstack.com/howto/py
         command = 'cls'
     os.system(command)
 
-        
-# main
+
+# main: uncomment following line to run the first version of the project. 
 main()
